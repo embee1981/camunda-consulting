@@ -1,2 +1,0 @@
-# Defines the deployment folder in the camunda BPM installation.
-deploy.jboss.dir=/path/to/your/jboss/standalone/deployments
