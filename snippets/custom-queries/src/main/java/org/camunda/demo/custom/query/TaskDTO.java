@@ -1,9 +1,9 @@
 package org.camunda.demo.custom.query;
 
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import org.camunda.bpm.engine.impl.persistence.entity.VariableInstanceEntity;
+
+import java.util.*;
 
 /**
  * Your own DTO class used to retrieve results with additional data in one query
@@ -27,7 +27,8 @@ public class TaskDTO {
 
   private Customer customer;
 
-  private List<ProcessVariableDTO> variables = new ArrayList<ProcessVariableDTO>();
+  private List<VariableInstanceEntity> variables = new ArrayList<VariableInstanceEntity>();
+  private Map<String, Object> dataTuples = new HashMap();
 
   public String getId() {
     return id;
@@ -141,11 +142,11 @@ public class TaskDTO {
     this.dueDateWithoutCascade = dueDateWithoutCascade;
   }
 
-  public List<ProcessVariableDTO> getVariables() {
+  public List<VariableInstanceEntity> getVariables() {
     return variables;
   }
 
-  public void setVariables(List<ProcessVariableDTO> variables) {
+  public void setVariables(List<VariableInstanceEntity> variables) {
     this.variables = variables;
   }
 
@@ -155,5 +156,13 @@ public class TaskDTO {
 
   public void setCustomer(Customer customer) {
     this.customer = customer;
+  }
+
+  public void addDataTuple(String name, Object value) {
+    dataTuples.put(name, value);
+  }
+
+  public Map<String, Object> getDataTuples() {
+    return dataTuples;
   }
 }

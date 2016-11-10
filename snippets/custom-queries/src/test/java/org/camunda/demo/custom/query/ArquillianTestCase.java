@@ -1,17 +1,7 @@
 package org.camunda.demo.custom.query;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.matchers.JUnitMatchers.hasItem;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-
-import javax.inject.Inject;
-
 import org.camunda.bpm.engine.RuntimeService;
+import org.camunda.bpm.engine.impl.persistence.entity.VariableInstanceEntity;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -22,6 +12,13 @@ import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import javax.inject.Inject;
+import java.io.File;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.junit.matchers.JUnitMatchers.hasItem;
 
 @RunWith(Arquillian.class)
 public class ArquillianTestCase {
@@ -51,19 +48,10 @@ public class ArquillianTestCase {
   public void after() {
     customerService.removeAll();
   }
-  
-//  @Inject
-//  private ProcessEngine processEngine;
 
   @Inject
   private RuntimeService runtimeService;
 
-//  @Inject
-//  private TaskService taskService;
-//  
-//  @Inject
-//  private HistoryService historyService;
-  
   @Inject
   private TasklistService tasklistService;
 
@@ -82,8 +70,11 @@ public class ArquillianTestCase {
     long customerId = customer.getId();
     
     HashMap<String, Object> variables = new HashMap<String, Object>();
+    Set<String> stuffSet = new HashSet<String>();
+    stuffSet.add("hello");
+    stuffSet.add("world");
+    variables.put("stuff", stuffSet);
     variables.put("customerId", customerId);
-    variables.put("someContent", "0815");
     
     ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("oneTaskProcess", variables);
     
@@ -99,8 +90,13 @@ public class ArquillianTestCase {
     assertEquals(regionUnderTest, task.getCustomer().getRegion());
     assertEquals("camunda", task.getCustomer().getName());
     assertEquals(customerId, task.getCustomer().getId());
-    
-    assertEquals(2, task.getVariables().size());
-//    assertThat(task.getVariables(), hasItem("theTask"));
+
+    List<VariableInstanceEntity> taskVariables = task.getVariables();
+    assertEquals(2, taskVariables.size());
+    Map<String, Object> dataTuples = task.getDataTuples();
+    assertTrue(dataTuples.containsKey("stuff"));
+    Set<String> values = (Set<String>) dataTuples.get("stuff");
+    assertTrue(values.contains("hello"));
+    assertTrue(values.contains("world"));
   }
 }

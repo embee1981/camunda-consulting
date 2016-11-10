@@ -1,14 +1,5 @@
 package org.camunda.demo.custom.query;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Properties;
-
-import javax.ejb.Stateless;
-import javax.inject.Named;
-import javax.sql.DataSource;
-
 import org.apache.ibatis.builder.xml.XMLConfigBuilder;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
@@ -22,6 +13,16 @@ import org.camunda.bpm.engine.ProcessEngineConfiguration;
 import org.camunda.bpm.engine.ProcessEngines;
 import org.camunda.bpm.engine.impl.cfg.ProcessEngineConfigurationImpl;
 import org.camunda.bpm.engine.impl.db.ListQueryParameterObject;
+import org.camunda.bpm.engine.impl.persistence.entity.VariableInstanceEntity;
+import org.camunda.bpm.engine.variable.value.TypedValue;
+
+import javax.ejb.Stateless;
+import javax.inject.Named;
+import javax.sql.DataSource;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.Properties;
 
 @Stateless
 @Named
@@ -33,7 +34,8 @@ public class TasklistService {
 		return properties;
 	}
 
-	public SqlSessionFactory createMyBatisSqlSessionFactory(InputStream config) {
+	public SqlSessionFactory createMyBatisSqlSessionFactory() {
+		InputStream config = this.getClass().getResourceAsStream("/customMybatisConfiguration.xml");
 		ProcessEngine processEngine = ProcessEngines.getDefaultProcessEngine();
 		ProcessEngineConfiguration processEngineConfiguration = processEngine.getProcessEngineConfiguration();
 		DataSource dataSource = processEngineConfiguration.getDataSource();
@@ -63,10 +65,8 @@ public class TasklistService {
 	}
 
 	public List<TaskDTO> getTasksForRegion(final String assignee, final String region) {
-		InputStream config = this.getClass().getResourceAsStream("/customMybatisConfiguration.xml");
-
-		SqlSessionFactory sqlSessionFactory = createMyBatisSqlSessionFactory(config);
-
+		//in production code, factory will be injected via spring
+		SqlSessionFactory sqlSessionFactory = createMyBatisSqlSessionFactory();
 		// compare to http://www.mybatis.org/mybatis-3/getting-started.html
 
 		SqlSession session = sqlSessionFactory.openSession();
@@ -76,6 +76,14 @@ public class TasklistService {
 			queryParameterObject.setParameter(region);
 
 			List<TaskDTO> tasks = session.selectList("customTask.selectTasksForRegion", queryParameterObject);
+			TaskDTO taskDTO = tasks.get(0);
+			List<VariableInstanceEntity> taskVariables = taskDTO.getVariables();
+			for(int i =0 ; i< taskVariables.size(); i++) {
+				VariableInstanceEntity variableInstanceEntity = taskVariables.get(i);
+				String name = variableInstanceEntity.getName();
+				TypedValue typedValue = variableInstanceEntity.getTypedValue(true);
+				taskDTO.addDataTuple(name, typedValue.getValue());
+			}
 			return tasks;
 		} finally {
 			session.close();

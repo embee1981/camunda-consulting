@@ -24,13 +24,31 @@
 	    <result property="name" column="CUSTOMER_NAME_"/>
 	    <result property="region" column="CUSTOMER_REGION_" />
     </association>
-    <collection ofType="org.camunda.demo.custom.query.ProcessVariableDTO" property="variables" column="tPROC_INST_ID_" resultMap="customVariableResultMap"/>
-  </resultMap>   
-    
-  <resultMap id="customVariableResultMap" type="org.camunda.demo.custom.query.ProcessVariableDTO">
-    <id property="id" column="VID_" jdbcType="VARCHAR"/>
-    <result property="name" column="VNAME_" javaType="String" jdbcType="VARCHAR" />
-    <result property="value" column="VTEXT_" jdbcType="VARCHAR"/>
+    <collection ofType="org.camunda.bpm.engine.impl.persistence.entity.VariableInstanceEntity" property="variables" column="tPROC_INST_ID_" resultMap="variableInstanceResultMap"/>
+  </resultMap>
+
+  <resultMap id="variableInstanceResultMap" type="org.camunda.bpm.engine.impl.persistence.entity.VariableInstanceEntity">
+    <id property="id" column="ID_" jdbcType="VARCHAR" />
+    <result property="revision" column="REV_" jdbcType="INTEGER"/>
+    <result property="serializerName" column="TYPE_" javaType="String" jdbcType="VARCHAR"/>
+    <result property="name" column="NAME_" javaType="String" jdbcType="VARCHAR" />
+    <result property="processInstanceId" column="PROC_INST_ID_" jdbcType="VARCHAR" />
+    <result property="executionId" column="EXECUTION_ID_" jdbcType="VARCHAR" />
+    <result property="caseInstanceId" column="CASE_INST_ID_" jdbcType="VARCHAR" />
+    <result property="caseExecutionId" column="CASE_EXECUTION_ID_" jdbcType="VARCHAR" />
+    <result property="taskId" column="TASK_ID_" jdbcType="VARCHAR" />
+    <result property="activityInstanceId" column="ACT_INST_ID_" jdbcType="VARCHAR" />
+    <result property="activityId" column="ACTIVITY_ID_" jdbcType="VARCHAR" />
+    <result property="isActive" column="IS_ACTIVE_" jdbcType="BOOLEAN" />
+    <result property="isConcurrencyScope" column="IS_CONCURRENCY_SCOPE_" jdbcType="BOOLEAN" />
+    <result property="byteArrayValueId" column="BYTEARRAY_ID_" jdbcType="VARCHAR" />
+    <result property="doubleValue" column="DOUBLE_" jdbcType="DOUBLE" />
+    <result property="textValue" column="TEXT_" jdbcType="VARCHAR"/>
+    <result property="textValue2" column="TEXT2_" jdbcType="VARCHAR"/>
+    <result property="longValue" column="LONG_" jdbcType="BIGINT"/>
+    <result property="sequenceCounter" column="SEQUENCE_COUNTER_" jdbcType="BIGINT"/>
+    <result property="isConcurrentLocal" column="IS_CONCURRENT_LOCAL_" jdbcType="BOOLEAN"/>
+    <result property="tenantId" column="TENANT_ID_" jdbcType="VARCHAR"/>
   </resultMap>
   
   <!-- SELECT -->  
@@ -52,34 +70,19 @@
       CUST.NAME_ as CUSTOMER_NAME_,
       CUST.REGION_ as CUSTOMER_REGION_,
       
-      VAR.ID_ as VID_,
-      VAR.REV_ as VREV_,
-      VAR.TYPE_ as VTYPE_,
-      VAR.NAME_ as VNAME_,
-      VAR.PROC_INST_ID_ as VPROC_INST_ID_,
-      VAR.EXECUTION_ID_ as VEXECUTION_ID_,
-      VAR.TASK_ID_ as VTASK_ID_,
-      VAR.BYTEARRAY_ID_ as VBYTEARRAY_ID_,
-      VAR.DOUBLE_ as VDOUBLE_,
-      VAR.LONG_ as VLONG_,
-      VAR.TEXT_ as VTEXT_,
-      VAR.TEXT2_ as VTEXT2_      
+      VAR.*
       
-    from ${prefix}ACT_RU_TASK T
-    left outer join (select * from ${prefix}ACT_RU_VARIABLE where NAME_= 'customerId' ) VAR_CUSTOMER on VAR_CUSTOMER.EXECUTION_ID_ = T.EXECUTION_ID_
+    from ACT_RU_TASK T
+    left outer join (select * from ACT_RU_VARIABLE where NAME_= 'customerId' ) VAR_CUSTOMER on VAR_CUSTOMER.EXECUTION_ID_ = T.EXECUTION_ID_
     left outer join CUSTOMER CUST on CUST.ID_ = VAR_CUSTOMER.LONG_
 
-    right outer join ${prefix}ACT_RU_VARIABLE VAR on VAR.EXECUTION_ID_ = T.EXECUTION_ID_    
+    right outer join ACT_RU_VARIABLE VAR on VAR.EXECUTION_ID_ = T.EXECUTION_ID_
     <where>
       <if test="parameter != null">
         CUST.REGION_ = #{parameter}
       </if> 
-    </where>     
+    </where>
 	${limitAfter}    
   </select>
-  <!--
-    LEFT OUTER JOIN führt evtl. zu MyBatis Problem mit Collection (oder im activiti Datenmodell bei CustomVariableTypes)
-    WEGEN JOIN gibt es dann mehrfache Results -> Paging nicht auf Taskebene (1 task mit 500 Variablen führt zu einem Objekt-Result) 
-  -->
 
 </mapper>
